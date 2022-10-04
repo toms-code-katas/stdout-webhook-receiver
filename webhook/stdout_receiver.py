@@ -32,6 +32,10 @@ class AlarmHandler(BaseHTTPRequestHandler):
         logger.debug(data.decode("utf-8"))
 
 
-if __name__ == '__main__':
+def main():
     httpd = HTTPServer(('', 8080), AlarmHandler)
     httpd.serve_forever()
+
+
+if __name__ == '__main__':
+    main()
