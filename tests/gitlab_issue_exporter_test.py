@@ -35,11 +35,11 @@ class GitlabIssueExporterTest(unittest.TestCase):
         with open(os.path.join(os.path.dirname(__file__), 'sample_gitlab_alert.json')) as json_file:
             cls._data = json.load(json_file)
 
-        test_logger = logging.getLogger("test")
+        test_logger = logging.getLogger("GitlabIssueExporterTest")
         test_logger.setLevel(logging.DEBUG)
         test_logger.addHandler(logging.StreamHandler(sys.stdout))
 
-        cls.test_logger = StreamToLogger(logger = test_logger, log_level=logging.DEBUG)
+        cls.test_logger = StreamToLogger(logger=test_logger, log_level=logging.DEBUG)
 #        sys.stdout = cls.test_logger
         logger = logging.getLogger('gitlab-issue-exporter')
         logger.addHandler(logging.StreamHandler(cls.test_logger))

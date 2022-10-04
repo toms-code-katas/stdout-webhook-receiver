@@ -12,7 +12,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
-logger = logging.getLogger('webhook-receiver')
+logger = logging.getLogger('stdout-receiver')
 
 
 class AlarmHandler(BaseHTTPRequestHandler):

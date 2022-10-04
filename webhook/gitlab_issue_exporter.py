@@ -13,7 +13,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
-logger = logging.getLogger('webhook-receiver')
+logger = logging.getLogger('gitlab-issue-exporter')
 
 
 class AlarmHandler(BaseHTTPRequestHandler):
@@ -27,13 +27,17 @@ class AlarmHandler(BaseHTTPRequestHandler):
 
         :return:
         """
-        self.send_response(200)
-        self.end_headers()
 
         data_as_string = self.rfile.read(int(self.headers['Content-Length'])).decode("utf-8")
         data = json.loads(data_as_string)
-        logger.debug(data)
 
+        if not data["status"] == "firing":
+            logger.debug("Received alert state is not firing. Omit processing")
+        else:
+            logger.debug("Received alert sate is firing. Start processing")
+
+        self.send_response(200)
+        self.end_headers()
 
 def main():
     httpd = HTTPServer(('', 8080), AlarmHandler)
