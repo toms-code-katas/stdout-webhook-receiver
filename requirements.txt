@@ -10,6 +10,8 @@ py==1.11.0
 pyparsing==3.0.7
 pytest==7.0.1
 pytest-cov==3.0.0
+python-gitlab==3.10.0
 requests==2.27.1
+requests-toolbelt==0.9.1
 tomli==2.0.1
 urllib3==1.26.8
