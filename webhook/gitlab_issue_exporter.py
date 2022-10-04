@@ -3,6 +3,7 @@ A handler for handling post requests and opening gitlab issues
 """
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
+import json
 import logging
 import sys
 
@@ -28,6 +29,10 @@ class AlarmHandler(BaseHTTPRequestHandler):
         """
         self.send_response(200)
         self.end_headers()
+
+        data_as_string = self.rfile.read(int(self.headers['Content-Length'])).decode("utf-8")
+        data = json.loads(data_as_string)
+        logger.debug(data)
 
 
 def main():

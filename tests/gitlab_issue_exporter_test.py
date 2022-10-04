@@ -8,7 +8,7 @@ import sys
 import time
 import unittest
 import webhook
-from webhook.stdout_receiver import AlarmHandler
+from webhook.gitlab_issue_exporter import AlarmHandler
 
 
 class StreamToLogger(object):
@@ -45,13 +45,13 @@ class GitlabIssueExporterTest(unittest.TestCase):
         logger.addHandler(logging.StreamHandler(cls.test_logger))
         logger.setLevel(logging.DEBUG)
 
-        cls._process = Process(target=webhook.stdout_receiver.main)
+        cls._process = Process(target=webhook.gitlab_issue_exporter.main)
         cls._process.start()
 
         time.sleep(1)
 
     def test_gitlab_issue_exporter(self):
-        r = requests.post('http://localhost:8080', json=json.dumps(GitlabIssueExporterTest._data))
+        r = requests.post('http://localhost:8080', json=GitlabIssueExporterTest._data)
         assert r.status_code == 200
         messages = GitlabIssueExporterTest.test_logger.log_message
         print(messages)
