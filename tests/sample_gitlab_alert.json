@@ -1,0 +1,59 @@
+{
+    "timestamp": "2022-10-04 11:15:54,488",
+    "alert": {
+        "receiver": "gitlab-issue-exporter",
+        "status": "firing",
+        "alerts": [
+            {
+                "status": "firing",
+                "labels": {
+                    "alertname": "DeploymentFailing",
+                    "cluster": "tst-cluster",
+                    "container": "kube-state-metrics",
+                    "deployment": "my-app",
+                    "endpoint": "http",
+                    "instance": "10.0.0.20:8080",
+                    "job": "kube-state-metrics",
+                    "namespace": "my-namespace",
+                    "platform_environment": "tst",
+                    "pod": "kube-state-metrics-7bf56f8cf-dnklp",
+                    "prometheus": "prometheus/prometheus-prometheus",
+                    "service": "kube-state-metrics"
+                },
+                "annotations": {
+                    "description": "Deployment my-app in environment tst is stuck in progressing for over 1 minute",
+                    "message": "Deployment my-app in environment tst is stuck in progressing for over 1 minute"
+                },
+                "startsAt": "2022-10-04T11:10:49.455Z",
+                "endsAt": "2022-10-04T11:13:49.455Z",
+                "generatorURL": "http://prometheus-prometheus.prometheus:9090/graph?g0.expr=kube_deployment_status_replicas_unavailable%7Bnamespace%3D%my-app%22%7D+%3E%3D+1\u0026g0.tab=1",
+                "fingerprint": "6390178d022df01a"
+            }
+        ],
+        "groupLabels": {
+            "job": "kube-state-metrics"
+        },
+        "commonLabels": {
+            "alertname": "DeploymentFailing",
+            "cluster": "tst-cluster",
+            "container": "kube-state-metrics",
+            "deployment": "my-app",
+            "endpoint": "http",
+            "instance": "10.0.0.20:8080",
+            "job": "kube-state-metrics",
+            "namespace": "my-namespace",
+            "platform_environment": "tst",
+            "pod": "kube-state-metrics-7bf56f8cf-dnklp",
+            "prometheus": "prometheus/prometheus-prometheus",
+            "service": "kube-state-metrics"
+        },
+        "commonAnnotations": {
+            "description": "Deployment my-app in environment tst is stuck in progressing for over 1 minute",
+            "message": "\"Deployment my-app in environment tst is stuck in progressing for over 1 minute\"\n"
+        },
+        "externalURL": "http://alertmanager-alertmanager.alertmanager-alertmanager:9093",
+        "version": "4",
+        "groupKey": "{}/{namespace=\"my-namespace\"}/{alertname=\"DeploymentFailing\"}:{job=\"kube-state-metrics\"}",
+        "truncatedAlerts": 0
+    }
+}

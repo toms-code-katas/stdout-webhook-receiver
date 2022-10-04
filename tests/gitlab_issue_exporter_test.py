@@ -28,11 +28,11 @@ class StreamToLogger(object):
         pass
 
 
-class WebhookReceiverTests(unittest.TestCase):
+class GitlabIssueExporterTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open(os.path.join(os.path.dirname(__file__), 'sample_stdout_alert.json')) as json_file:
+        with open(os.path.join(os.path.dirname(__file__), 'sample_gitlab_alert.json')) as json_file:
             cls._data = json.load(json_file)
 
         test_logger = logging.getLogger("test")
@@ -41,7 +41,7 @@ class WebhookReceiverTests(unittest.TestCase):
 
         cls.test_logger = StreamToLogger(logger = test_logger, log_level=logging.DEBUG)
 #        sys.stdout = cls.test_logger
-        logger = logging.getLogger('webhook-receiver')
+        logger = logging.getLogger('gitlab-issue-exporter')
         logger.addHandler(logging.StreamHandler(cls.test_logger))
         logger.setLevel(logging.DEBUG)
 
@@ -50,10 +50,10 @@ class WebhookReceiverTests(unittest.TestCase):
 
         time.sleep(1)
 
-    def test_webhook_receiver(self):
-        r = requests.post('http://localhost:8080', json=json.dumps(WebhookReceiverTests._data))
+    def test_gitlab_issue_exporter(self):
+        r = requests.post('http://localhost:8080', json=json.dumps(GitlabIssueExporterTest._data))
         assert r.status_code == 200
-        messages = WebhookReceiverTests.test_logger.log_message
+        messages = GitlabIssueExporterTest.test_logger.log_message
         print(messages)
 
     @classmethod
