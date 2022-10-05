@@ -27,6 +27,7 @@ class AlarmHandler(BaseHTTPRequestHandler):
     def __init__(self, request: bytes, client_address: tuple[str, int], server: socketserver.BaseServer) -> None:
         self.gitlab_url = os.getenv("GITLAB_URL", "https://gitlab.com")
         self.gitlab_project_id = os.getenv("GITLAB_PROJECT_ID", "38561817")
+        self.gitlab_username = os.getenv("GITLAB_USERNAME", "gitlab-issue-exporter")
         if os.path.isfile("/etc/gitlab-issue-exporter/token"):
             with open('/etc/gitlab-issue-exporter/token', 'r') as secret_file:
                 self.gitlab_token = secret_file.read().rstrip()
@@ -56,7 +57,20 @@ class AlarmHandler(BaseHTTPRequestHandler):
             deployment = data["commonLabels"]["deployment"]
 
             for issue in project.search('issues', [deployment, environment], as_list=False):
-                print(issue)
+                if issue["state"] == "opened":
+                    issue_id = issue['iid']
+                    logger.debug(f"Found already existing issue issue \"{issue_id}\", \"{issue['title']}\"")
+                    already_created_notes = 0
+                    last_note_date = None
+                    full_issue = project.issues.get(issue_id)
+                    for note in full_issue.notes.list():
+                        if self.gitlab_username == note.author["username"]:
+                            already_created_notes += 1
+                    logger.debug(f"Found {already_created_notes} notes created by {self.gitlab_username}")
+                    if already_created_notes <= 9:
+                        full_issue.notes.create({'body': 'created by issue exporter'})
+                    elif already_created_notes > 10:
+                        logger.debug("Maximum number of notes reached for issue. Omit creating new ones")
 
         self.send_response(200)
         self.end_headers()
