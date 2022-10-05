@@ -47,7 +47,7 @@
   },
   "commonAnnotations": {
     "description": "Deployment my-app in environment tst is stuck in progressing for over 1 minute",
-    "message": "\"Deployment my-app in environment tst is stuck in progressing for over 1 minute\"\n"
+    "message": "Deployment my-app in environment tst is stuck in progressing for over 1 minute"
   },
   "externalURL": "http://alertmanager-alertmanager.alertmanager-alertmanager:9093",
   "version": "4",

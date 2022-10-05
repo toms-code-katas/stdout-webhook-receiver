@@ -3,13 +3,13 @@ A handler for handling post requests and opening gitlab issues
 """
 import datetime
 import gitlab
-import os
-import socketserver
-from http.server import BaseHTTPRequestHandler
-from http.server import HTTPServer
 import json
 import logging
+import os
+import socketserver
 import sys
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -29,7 +29,7 @@ class AlarmHandler(BaseHTTPRequestHandler):
         self.gitlab_url = os.getenv("GITLAB_URL", "https://gitlab.com")
         self.gitlab_project_id = os.getenv("GITLAB_PROJECT_ID", "38561817")
         self.gitlab_username = os.getenv("GITLAB_USERNAME", "gitlab-issue-exporter")
-        self.grace_period = os.getenv("GRACE_PERIOD", 600)
+        self.grace_period = os.getenv("GRACE_PERIOD", 1)
         if os.path.isfile("/etc/gitlab-issue-exporter/token"):
             with open('/etc/gitlab-issue-exporter/token', 'r') as secret_file:
                 self.gitlab_token = secret_file.read().rstrip()
@@ -60,7 +60,11 @@ class AlarmHandler(BaseHTTPRequestHandler):
 
             related_issue = self.find_related_issue(deployment, environment, project)
             if not related_issue:
-                pass
+                logger.debug(
+                    f"No issue yet exists for failing deployment {deployment} in environment {environment}."
+                    f" Creating one")
+                project.issues.create({'title': data["commonAnnotations"]["message"],
+                                       'description': data["commonAnnotations"]["description"]})
             else:
                 issue_id = related_issue["iid"]
                 already_created_notes = 0
@@ -76,9 +80,14 @@ class AlarmHandler(BaseHTTPRequestHandler):
                             latest_creation_date = creation_date
                 logger.debug(f"Found {already_created_notes} notes created by {self.gitlab_username}")
                 if already_created_notes <= 9 and self.has_grace_period_elapsed(latest_creation_date):
-                    full_issue.notes.create({'body': 'created by issue exporter'})
-                elif already_created_notes > 10:
-                    logger.debug("Maximum number of notes reached for issue. Omit creating new ones")
+                    logger.debug("Issue already exists. Adding note")
+                    full_issue.notes.create({'body': f'`{datetime.datetime.utcnow()}`: Issue not yet resolved'})
+                elif already_created_notes == 10:
+                    logger.debug("Maximum number of notes reached for issue")
+                    full_issue.notes.create({'body': f"`{datetime.datetime.utcnow()}`: Maximum number of notes"
+                                                     f" reached for issue. Issue will not longer be updated"})
+                else:
+                    logger.debug("Maximum number of notes exceeded for issue. Omitting note creation")
 
         self.send_response(200)
         self.end_headers()
@@ -87,9 +96,8 @@ class AlarmHandler(BaseHTTPRequestHandler):
         for issue in project.search('issues', [deployment, environment], as_list=False, order_by="created_at"):
             if issue["state"] == "opened":
                 issue_id = issue['iid']
-                logger.debug(f"Found already existing issue issue \"{issue_id}\", \"{issue['title']}\"")
-                break
-        return issue
+                logger.debug(f"Found already existing issue \"{issue_id}\", \"{issue['title']}\"")
+                return issue
 
     def has_grace_period_elapsed(self, latest_creation_date):
         if not latest_creation_date:
@@ -101,6 +109,7 @@ class AlarmHandler(BaseHTTPRequestHandler):
                 f" Omit creation of note")
             return False
         return True
+
 
 def main():
     httpd = HTTPServer(('', 8080), AlarmHandler)
