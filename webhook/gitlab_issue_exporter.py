@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import socketserver
+import threading
 import sys
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
@@ -18,6 +19,12 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger('gitlab-issue-exporter')
+
+
+class GitLabConnectionTestTimer(threading.Timer):
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args, **self.kwargs)
 
 
 class AlarmHandler(BaseHTTPRequestHandler):
@@ -35,7 +42,24 @@ class AlarmHandler(BaseHTTPRequestHandler):
                 self.gitlab_token = secret_file.read().rstrip()
         else:
             self.gitlab_token = os.getenv("GITLAB_TOKEN")
+
+        self.gitlab = gitlab.Gitlab(self.gitlab_url, private_token=self.gitlab_token)
+        self.gitlab_is_healthy = True
+
+        self.t = GitLabConnectionTestTimer(60, self.check_gitlab_connection)
+        self.t.start()
+
         super().__init__(request, client_address, server)
+
+    def check_gitlab_connection(self):
+        logger.debug(f"Checking connection to GitLab")
+        response = self.gitlab.session.head(self.gitlab.url)
+        if response.ok:
+            logger.debug(f"Connection to GitLab is working")
+            self.gitlab_is_healthy = True
+        else:
+            logger.error(f"Connection to GitLab is not working")
+            self.gitlab_is_healthy = False
 
     # pylint: disable=C0103
     def do_POST(self):
@@ -49,11 +73,12 @@ class AlarmHandler(BaseHTTPRequestHandler):
 
         if not data["status"] == "firing":
             logger.debug("Received alert state is not firing. Omit processing")
+        elif not self.gitlab_is_healthy:
+            logger.error("Connection to GitLab is not healthy. Alert is not processed")
         else:
             logger.debug("Received alert sate is firing. Start processing")
 
-            gl = gitlab.Gitlab(self.gitlab_url, private_token=self.gitlab_token)
-            project = gl.projects.get(self.gitlab_project_id, lazy=True)
+            project = self.gitlab.projects.get(self.gitlab_project_id, lazy=True)
 
             environment = data["commonLabels"]["platform_environment"]
             deployment = data["commonLabels"]["deployment"]
@@ -85,7 +110,7 @@ class AlarmHandler(BaseHTTPRequestHandler):
                 elif already_created_notes == 10:
                     logger.debug("Maximum number of notes reached for issue")
                     full_issue.notes.create({'body': f"`{datetime.datetime.utcnow()}`: Maximum number of notes"
-                                                     f" reached for issue. Issue will not longer be updated"})
+                                                     f" reached for issue. Issue will no longer be updated"})
                 else:
                     logger.debug("Maximum number of notes exceeded for issue. Omitting note creation")
 
