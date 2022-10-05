@@ -80,15 +80,14 @@ class AlarmHandler(BaseHTTPRequestHandler):
 
             project = self.gitlab.projects.get(self.gitlab_project_id, lazy=True)
 
-            environment = data["commonLabels"]["platform_environment"]
-            deployment = data["commonLabels"]["deployment"]
+            message = data["commonAnnotations"]["message"]
 
-            related_issue = self.find_related_issue(deployment, environment, project)
+            related_issue = self.find_related_issue(message, project)
             if not related_issue:
                 logger.debug(
-                    f"No issue yet exists for failing deployment {deployment} in environment {environment}."
+                    f"No issue yet exists with title \"{message}\"."
                     f" Creating one")
-                project.issues.create({'title': data["commonAnnotations"]["message"],
+                project.issues.create({'title': message,
                                        'description': data["commonAnnotations"]["description"]})
             else:
                 issue_id = related_issue["iid"]
@@ -117,8 +116,8 @@ class AlarmHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
 
-    def find_related_issue(self, deployment, environment, project):
-        for issue in project.search('issues', [deployment, environment], as_list=False, order_by="created_at"):
+    def find_related_issue(self, title, project):
+        for issue in project.search('issues', [title], as_list=False, order_by="created_at"):
             if issue["state"] == "opened":
                 issue_id = issue['iid']
                 logger.debug(f"Found already existing issue \"{issue_id}\", \"{issue['title']}\"")
